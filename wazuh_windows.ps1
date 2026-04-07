@@ -8,7 +8,7 @@ Write-Host "=== Wazuh Agent & Sysmon Installer ===" -ForegroundColor Cyan
 
 # 2. Input Interaktif
 $IP_SERVER_WORKER = Read-Host "Masukkan IP Wazuh Manager/Worker"
-$NAMA_SERVER = Read-Host "Masukkan Nama Agent (e.g. SRV-WEB-01)"
+$NAMA_SERVER = Read-Host "Masukkan Nama Server"
 $AGENT_GROUP = "TMMIN" 
 
 # 3. Download dan Install Wazuh Agent
@@ -36,14 +36,12 @@ Write-Host "[3/5] Mengaktifkan remote_commands..." -ForegroundColor Yellow
 $InternalConfig = "C:\Program Files (x86)\ossec-agent\internal_options.conf"
 $LocalInternalConfig = "C:\Program Files (x86)\ossec-agent\local_internal_options.conf"
 
-# Update internal_options.conf
 if (Test-Path $InternalConfig) {
     (Get-Content $InternalConfig) -replace 'logcollector.remote_commands=0', 'logcollector.remote_commands=1' `
                                    -replace 'wazuh_command.remote_commands=0', 'wazuh_command.remote_commands=1' | 
     Set-Content $InternalConfig -Encoding UTF8
 }
 
-# Update local_internal_options.conf (Menghapus isi lama dan menulis baru agar bersih)
 $ConfigContent = @"
 logcollector.remote_commands=1
 wazuh_command.remote_commands=1
@@ -62,16 +60,17 @@ if (Test-Path $LocalInternalConfig) {
     } else {
         Write-Warning "VERIFIKASI GAGAL: Konfigurasi tidak ditemukan di file."
     }
-} else {
-    Write-Error "File konfigurasi tidak ditemukan!"
 }
 
 # 7. Finalisasi Service
 Write-Host "`n[5/5] Restarting Wazuh Service..." -ForegroundColor Yellow
 Restart-Service -Name "WazuhSvc" -Force
 
-# Cek status service terakhir
+# Cek status service terakhir (Cara yang kompatibel dengan PowerShell lama)
 $ServiceStatus = Get-Service "WazuhSvc"
-Write-Host "Status Service saat ini: $($ServiceStatus.Status)" -ForegroundColor ($ServiceStatus.Status -eq 'Running' ? 'Green' : 'Red')
+$Color = "Red"
+if ($ServiceStatus.Status -eq 'Running') { $Color = "Green" }
+
+Write-Host "Status Service saat ini: $($ServiceStatus.Status)" -ForegroundColor $Color
 
 Write-Host "`nSelesai! Agent '$NAMA_SERVER' telah terhubung." -ForegroundColor Green
