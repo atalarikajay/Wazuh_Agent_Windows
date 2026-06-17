@@ -9,7 +9,7 @@ Write-Host "=== Wazuh Agent & Sysmon Installer ===" -ForegroundColor Cyan
 # 2. Input Interaktif
 $IP_SERVER_WORKER = Read-Host "Masukkan IP Wazuh Manager/Worker"
 $NAMA_SERVER = Read-Host "Masukkan Nama Server"
-$AGENT_GROUP = "CMWI" 
+$AGENT_GROUP = "TMMIN" 
 
 # 3. Download dan Install Wazuh Agent
 Write-Host "`n[1/5] Mengunduh dan menginstall Wazuh Agent..." -ForegroundColor Yellow
