@@ -48,12 +48,13 @@ wazuh_command.remote_commands=1
 "@
 $ConfigContent | Out-File -FilePath $LocalInternalConfig -Encoding UTF8
 
-# 6. Update Konfigurasi ossec.conf untuk Sysmon (NEW)
-Write-Host "`n[4/6] Menambahkan konfigurasi Sysmon ke ossec.conf..." -ForegroundColor Yellow
+# 6. Update Konfigurasi ossec.conf untuk Sysmon & Defender
+Write-Host "`n[4/6] Menambahkan konfigurasi Sysmon & Defender ke ossec.conf..." -ForegroundColor Yellow
 $OssecConf = "C:\Program Files (x86)\ossec-agent\ossec.conf"
 
 if (Test-Path $OssecConf) {
     $ConfContentRaw = Get-Content $OssecConf -Raw
+    $IsModified = $false
     
     $SysmonBlock = @"
   <localfile>
@@ -62,13 +63,33 @@ if (Test-Path $OssecConf) {
   </localfile>
 "@
 
-    # Mengecek agar tidak terjadi duplikasi konfigurasi
+    $DefenderBlock = @"
+  <localfile>
+    <location>Microsoft-Windows-Windows Defender/Operational</location>
+    <log_format>eventchannel</log_format>
+  </localfile>
+"@
+
+    # Mengecek dan inject Sysmon
     if ($ConfContentRaw -notmatch "Microsoft-Windows-Sysmon/Operational") {
-        # Menyisipkan blok konfigurasi tepat sebelum tag penutup </ossec_config> agar struktur XML aman
-        $NewConfContent = $ConfContentRaw -replace '</ossec_config>', "`n$SysmonBlock`n</ossec_config>"
-        Set-Content -Path $OssecConf -Value $NewConfContent -Encoding UTF8
+        $ConfContentRaw = $ConfContentRaw -replace '</ossec_config>', "`n$SysmonBlock`n</ossec_config>"
+        $IsModified = $true
     } else {
         Write-Host "Konfigurasi Sysmon sudah ada di ossec.conf, melewati penambahan." -ForegroundColor Cyan
+    }
+
+    # Mengecek dan inject Defender
+    if ($ConfContentRaw -notmatch "Microsoft-Windows-Windows Defender/Operational") {
+        $ConfContentRaw = $ConfContentRaw -replace '</ossec_config>', "`n$DefenderBlock`n</ossec_config>"
+        $IsModified = $true
+    } else {
+        Write-Host "Konfigurasi Windows Defender sudah ada di ossec.conf, melewati penambahan." -ForegroundColor Cyan
+    }
+
+    # Simpan file jika ada perubahan
+    if ($IsModified) {
+        Set-Content -Path $OssecConf -Value $ConfContentRaw -Encoding UTF8
+        Write-Host "Konfigurasi berhasil diinject ke ossec.conf." -ForegroundColor Green
     }
 } else {
     Write-Warning "File ossec.conf tidak ditemukan. Pastikan instalasi Wazuh berhasil."
@@ -90,18 +111,22 @@ if (Test-Path $LocalInternalConfig) {
     }
 }
 
-# Verifikasi ossec.conf (NEW)
+# Verifikasi ossec.conf
 if (Test-Path $OssecConf) {
     $CheckOssecConf = Get-Content $OssecConf -Raw
+    
+    # Cek Sysmon
     if ($CheckOssecConf -match "Microsoft-Windows-Sysmon/Operational") {
         Write-Host "`nVERIFIKASI BERHASIL: Konfigurasi Sysmon pada ossec.conf ditemukan." -ForegroundColor Green
-        Write-Host "Cuplikan konfigurasi yang ditambahkan:" -ForegroundColor Gray
-        Write-Host "  <localfile>" -ForegroundColor White
-        Write-Host "    <location>Microsoft-Windows-Sysmon/Operational</location>" -ForegroundColor White
-        Write-Host "    <log_format>eventchannel</log_format>" -ForegroundColor White
-        Write-Host "  </localfile>" -ForegroundColor White
     } else {
         Write-Warning "`nVERIFIKASI GAGAL: Konfigurasi Sysmon tidak ditemukan di ossec.conf."
+    }
+
+    # Cek Defender
+    if ($CheckOssecConf -match "Microsoft-Windows-Windows Defender/Operational") {
+        Write-Host "VERIFIKASI BERHASIL: Konfigurasi Windows Defender pada ossec.conf ditemukan." -ForegroundColor Green
+    } else {
+        Write-Warning "VERIFIKASI GAGAL: Konfigurasi Windows Defender tidak ditemukan di ossec.conf."
     }
 }
 
@@ -115,4 +140,4 @@ $Color = "Red"
 if ($ServiceStatus.Status -eq 'Running') { $Color = "Green" }
 
 Write-Host "`nStatus Service saat ini: $($ServiceStatus.Status)" -ForegroundColor $Color
-Write-Host "`nSelesai! Agent '$NAMA_SERVER' telah terhubung dan terkonfigurasi dengan Sysmon." -ForegroundColor Green
+Write-Host "`nSelesai! Agent '$NAMA_SERVER' telah terhubung dan terkonfigurasi dengan Sysmon & Defender." -ForegroundColor Green
