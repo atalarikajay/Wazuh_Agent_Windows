@@ -27,7 +27,7 @@ $SysmonExe = "$env:TEMP\Sysmon64.exe"
 $SysmonConfig = "$env:TEMP\config.xml"
 
 Invoke-WebRequest -Uri "https://raw.githubusercontent.com/atalarikajay/Wazuh_Agent_Windows/main/Sysmon64.exe" -OutFile $SysmonExe
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/atalarikajay/Wazuh_Agent_Windows/main/sysmonconfig-export.xml" -OutFile $SysmonConfig
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/atalarikajay/Wazuh_Agent_Windows/main/sysmonconfig-export-new-tuned.xml" -OutFile $SysmonConfig
 
 Start-Process -FilePath $SysmonExe -ArgumentList "-accepteula -i $SysmonConfig" -Wait
 
