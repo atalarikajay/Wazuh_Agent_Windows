@@ -94,7 +94,7 @@
     Installer karena berkas terkunci, bukan syarat agar pemantauan jalan.
 
     VARIABEL LINGKUNGAN untuk mode satu baris:
-      WZ_MANAGER        IP atau hostname manajer
+      WZ_MANAGER        IP atau hostname manager
       WZ_NAME           nama agen (bawaan: nama komputer)
       WZ_GROUP          agent group, pisah koma
       WZ_SYSMON_CONFIG  berkas config Sysmon lokal
@@ -109,7 +109,7 @@
     KODE KELUAR:
       0  berhasil dan agen terdaftar
       1  gagal
-      2  terpasang tapi agen belum terdaftar ke manajer
+      2  terpasang tapi agen belum terdaftar ke manager
 #>
 
 [CmdletBinding()]
@@ -141,7 +141,7 @@ $ErrorActionPreference = 'Stop'
 # Parameter selalu menang kalau keduanya diberikan. Variabel lingkungan
 # hanya dibaca kalau parameter yang bersangkutan kosong.
 #
-#   WZ_MANAGER        IP atau hostname manajer
+#   WZ_MANAGER        IP atau hostname manager
 #   WZ_NAME           nama agen (bawaan: nama komputer)
 #   WZ_GROUP          agent group, pisah koma
 #   WZ_SYSMON_CONFIG  berkas config Sysmon lokal
@@ -441,7 +441,7 @@ Write-Step 'Mengumpulkan data instalasi'
 # menggantung, yang jauh lebih sulit didiagnosis daripada gagal langsung.
 if ($AssumeYes) {
     $missing = New-Object System.Collections.Generic.List[string]
-    if ([string]::IsNullOrWhiteSpace($ManagerIP))  { $missing.Add('WZ_MANAGER (IP manajer)') }
+    if ([string]::IsNullOrWhiteSpace($ManagerIP))  { $missing.Add('WZ_MANAGER (IP manager)') }
     if ([string]::IsNullOrWhiteSpace($AgentGroup)) { $missing.Add('WZ_GROUP (agent group)') }
     if ($missing.Count -gt 0) {
         Write-Fail ("Mode tanpa interaksi aktif tapi data wajib belum diisi:`n" +
@@ -456,14 +456,14 @@ if ($AssumeYes) {
     if ([string]::IsNullOrWhiteSpace($AgentName)) { $AgentName = $env:COMPUTERNAME }
 }
 
-# --- IP / hostname manager
+# --- IP / domain manager
 $ipTries = 0
 while ($true) {
     if ([string]::IsNullOrWhiteSpace($ManagerIP)) {
-        if ($AssumeYes) { Write-Fail 'IP manajer kosong dalam mode tanpa interaksi.' }
+        if ($AssumeYes) { Write-Fail 'IP manager kosong dalam mode tanpa interaksi.' }
         $ipTries++
-        if ($ipTries -gt 5) { Write-Fail 'Terlalu banyak masukan tidak sah untuk IP manajer.' }
-        $ManagerIP = (Read-Host '  IP / hostname Wazuh Manager atau Worker').Trim()
+        if ($ipTries -gt 5) { Write-Fail 'Terlalu banyak masukan tidak sah untuk IP manager.' }
+        $ManagerIP = (Read-Host '  IP / Domain Wazuh Manager atau Worker').Trim()
     }
     else {
         $ManagerIP = $ManagerIP.Trim()
