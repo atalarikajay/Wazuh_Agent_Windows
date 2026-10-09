@@ -259,14 +259,24 @@ Write-Step 'Menghentikan service'
 
 if ($svc) {
     try {
+        # Refresh objek service untuk mendapatkan status terupdate dari Windows OS
+        $svc.Refresh()
+        
         if ($svc.Status -ne 'Stopped') {
             Stop-Service -Name $ServiceName -Force -ErrorAction Stop
-            (Get-Service $ServiceName).WaitForStatus('Stopped', [TimeSpan]::FromSeconds(60))
+            
+            # Menunggu maksimal 60 detik sampai statusnya benar-benar 'Stopped'
+            $svc.WaitForStatus('Stopped', [TimeSpan]::FromSeconds(60))
         }
         Write-Ok 'Service berhenti'
     }
     catch {
+        # Menangani skenario jika Stop-Service gagal atau WaitForStatus mengalami timeout
         Write-Prob "Service tidak mau berhenti lewat Stop-Service: $($_.Exception.Message)"
+        
+        # OPSI TAMBAHAN: Paksa matikan via kill process jika wazuh-agent.exe macet total (hung)
+        # Write-Info "Mencoba menghentikan paksa via PID/Process..."
+        # Stop-Process -Name "wazuh-agent" -Force -ErrorAction SilentlyContinue
     }
 }
 else {
